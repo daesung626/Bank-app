@@ -10,6 +10,16 @@ const account1 = {
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
   interestRate: 1.2, // %
   pin: 1111,
+  movementDates: [
+    '2019-10-18T21:31:17.178Z',
+    '2019-11-18T21:31:17.178Z',
+    '2020-01-18T21:31:17.178Z',
+    '2020-03-18T21:31:17.178Z',
+    '2020-05-18T21:31:17.178Z',
+    '2020-06-18T21:31:17.178Z',
+    '2020-08-18T21:31:17.178Z',
+    '2020-10-18T21:31:17.178Z',
+  ],
 };
 
 const account2 = {
@@ -17,6 +27,16 @@ const account2 = {
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
+  movementDates: [
+    '2019-10-18T21:31:17.178Z',
+    '2019-11-18T21:31:17.178Z',
+    '2020-01-18T21:31:17.178Z',
+    '2020-03-18T21:31:17.178Z',
+    '2020-05-18T21:31:17.178Z',
+    '2020-06-18T21:31:17.178Z',
+    '2020-08-18T21:31:17.178Z',
+    '2020-10-18T21:31:17.178Z',
+  ],
 };
 
 const account3 = {
@@ -24,6 +44,16 @@ const account3 = {
   movements: [200, -200, 340, -300, -20, 50, 400, -460],
   interestRate: 0.7,
   pin: 3333,
+  movementDates: [
+    '2019-10-18T21:31:17.178Z',
+    '2019-11-18T21:31:17.178Z',
+    '2020-01-18T21:31:17.178Z',
+    '2020-03-18T21:31:17.178Z',
+    '2020-05-18T21:31:17.178Z',
+    '2020-06-18T21:31:17.178Z',
+    '2020-08-18T21:31:17.178Z',
+    '2020-10-18T21:31:17.178Z',
+  ],
 };
 
 const account4 = {
@@ -31,6 +61,16 @@ const account4 = {
   movements: [430, 1000, 700, 50, 90],
   interestRate: 1,
   pin: 4444,
+  movementDates: [
+    '2019-10-18T21:31:17.178Z',
+    '2019-11-18T21:31:17.178Z',
+    '2020-01-18T21:31:17.178Z',
+    '2020-03-18T21:31:17.178Z',
+    '2020-05-18T21:31:17.178Z',
+    '2020-06-18T21:31:17.178Z',
+    '2020-08-18T21:31:17.178Z',
+    '2020-10-18T21:31:17.178Z',
+  ],
 };
 
 const accounts = [account1, account2, account3, account4];
@@ -62,19 +102,29 @@ const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
 // Displaying deposit or withdrawal on DOM
-const displayMovements = function (movements, sort = false) {
+const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = '';
 
-  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+  const movs = sort
+    ? acc.movements.slice().sort((a, b) => a - b)
+    : acc.movements;
 
   movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
 
+    const date = new Date(acc.movementDates[i]);
+
+    const day = `${date.getDate()}`.padStart(2, 0);
+    const month = `${date.getMonth() + 1}`.padStart(2, 0);
+    const year = date.getFullYear();
+    const displayDate = `${month}/${day}/${year}`;
+
     const html = `
       <div class="movements__row">
-        <div class="movements__type movements__type--${type}">${
-      i + 1
-    } ${type}</div>
+        <div class="movements__type movements__type--${type}">
+        ${
+          i + 1
+        } ${type}</div> <div class="movements__date">${displayDate}</div> 
       <div class="movements__value">${mov.toFixed(2)}</div>
       </div >
   `;
@@ -129,12 +179,35 @@ const calcDisplaySummary = function (acc) {
 };
 
 const updateUI = function (acc) {
-  displayMovements(acc.movements);
+  displayMovements(acc);
   calcDisplayBalance(acc);
   calcDisplaySummary(acc);
 };
 
-let currentUser;
+const setLogoutTimer = function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+    // Print to the UI
+    labelTimer.textContent = `${min}:${sec}`;
+    // Log user out after timer
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = 'Log in to get started';
+      containerApp.style.opacity = 0;
+    }
+    time--;
+  };
+  // Set time to 5 minutes
+  let time = 300;
+
+  tick();
+  // Call timer every second
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
+let currentUser, timer;
 btnLogin.addEventListener('click', function (e) {
   // Prevents form from submitting
   e.preventDefault();
@@ -147,8 +220,17 @@ btnLogin.addEventListener('click', function (e) {
     }`;
     containerApp.style.opacity = 100;
 
+    const now = new Date();
+    const day = `${now.getDate()}`.padStart(2, 0);
+    const month = `${now.getMonth() + 1}`.padStart(2, 0);
+    const year = now.getFullYear();
+    labelDate.textContent = `${month}/${day}/${year}`;
+
     inputLoginPin.value = inputLoginUsername.value = '';
     inputLoginPin.blur();
+
+    if (timer) clearInterval(timer);
+    timer = setLogoutTimer();
 
     updateUI(currentUser);
   }
@@ -172,7 +254,13 @@ btnTransfer.addEventListener('click', function (e) {
     currentUser.movements.push(-amount);
     receiverAcc.movements.push(amount);
 
+    currentUser.movementDates.push(new Date().toISOString());
+    receiverAcc.movementDates.push(new Date().toISOString());
+
     updateUI(currentUser);
+
+    clearInterval(timer);
+    timer = setLogoutTimer();
   }
 });
 
@@ -181,9 +269,15 @@ btnLoan.addEventListener('click', function (e) {
   const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentUser.movements.some(mov => mov >= amount * 0.1)) {
-    currentUser.movements.push(amount);
+    setTimeout(function () {
+      currentUser.movements.push(amount);
+      currentUser.movementDates.push(new Date().toISOString());
 
-    updateUI(currentUser);
+      updateUI(currentUser);
+    }, 2500);
+
+    clearInterval(timer);
+    timer = setLogoutTimer();
   }
 
   inputLoanAmount.value = '';
